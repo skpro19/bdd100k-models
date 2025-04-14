@@ -1,8 +1,57 @@
 # Quantitative Performance Analysis of Faster R-CNN R50-FPN on BDD100K
 
-This document provides a detailed quantitative analysis of the Faster R-CNN R50-FPN 1x model's performance on the complete BDD100K validation dataset (10,000 images). The analysis focuses on detection statistics, class distribution, and confidence score patterns.
+This document provides a detailed quantitative analysis of the Faster R-CNN R50-FPN 1x model's performance on the complete BDD100K validation dataset (10,000 images). The analysis includes official evaluation metrics as well as detection statistics, class distribution, and confidence score patterns.
 
-## 1. Detection Performance Overview
+## 1. Evaluation Metrics
+
+### 1.1 Official Evaluation Results
+
+The model was evaluated on the BDD100K validation set using the standard detection metrics with an IoU threshold of 0.5:
+
+| Metric | Value |
+|--------|-------|
+| Mean Average Precision (mAP) | **0.1916** |
+
+### 1.2 Per-Category Performance 
+
+| Category | Average Precision (AP) | Precision | Recall | GT Count | Pred Count |
+|----------|------------------------|-----------|--------|----------|------------|
+| car | 0.3868 | 0.4591 | 0.8424 | 102,506 | 188,083 |
+| traffic sign | 0.2658 | 0.3565 | 0.7454 | 34,908 | 72,975 |
+| traffic light | 0.2464 | 0.4893 | 0.5035 | 26,885 | 27,664 |
+| truck | 0.1761 | 0.2205 | 0.7986 | 4,245 | 15,375 |
+| bus | 0.1332 | 0.1724 | 0.7727 | 1,597 | 7,156 |
+| rider | 0.1329 | 0.2114 | 0.6287 | 649 | 1,930 |
+| pedestrian | 0.0000 | 0.0000 | 0.0000 | 0 | 36,266 |
+| motorcycle | 0.0000 | 0.0000 | 0.0000 | 0 | 1,588 |
+| bicycle | 0.0000 | 0.0000 | 0.0000 | 0 | 3,226 |
+| train | 0.0000 | 0.0000 | 0.0000 | 15 | 0 |
+
+The evaluation results reveal several key insights:
+
+1. **Overall Performance**: The model achieves a moderate mAP of 0.1916, indicating room for improvement.
+
+2. **Class Imbalance Impact**: The model performs best on the most common classes (car, traffic sign, traffic light), with AP values of 0.3868, 0.2658, and 0.2464 respectively.
+
+3. **Precision vs. Recall Trade-off**: For most detected classes, the recall is significantly higher than precision, suggesting the model tends to generate more false positives than false negatives.
+
+4. **Zero-AP Classes**: Four classes (pedestrian, motorcycle, bicycle, train) have AP values of 0, indicating either no ground truth samples available for evaluation or complete detection failure.
+
+### 1.3 Overall Detection Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total ground truth boxes | 170,805 |
+| Total prediction boxes | 354,263 |
+| True positives | 130,943 |
+| False positives | 223,320 |
+| False negatives | 39,862 |
+| Overall recall | 0.7666 |
+| Overall precision | 0.3696 |
+
+The high number of false positives (223,320) compared to true positives (130,943) confirms the model's tendency to over-predict, resulting in relatively low precision.
+
+## 2. Detection Performance Overview
 
 | Metric | Value |
 |--------|-------|
@@ -14,7 +63,7 @@ This document provides a detailed quantitative analysis of the Faster R-CNN R50-
 
 The model detects a substantial number of objects per image (average 17.07), indicating the complexity and richness of the BDD100K street scenes. The consistency between mean and median suggests a relatively balanced distribution of object counts across images.
 
-## 2. Class Distribution
+## 3. Class Distribution
 
 The model detected instances from all 10 target classes in the BDD100K dataset except for 'train' (not found in the quantitative analysis results). The distribution of detections across classes is as follows:
 
@@ -33,7 +82,7 @@ The model detected instances from all 10 target classes in the BDD100K dataset e
 
 ![Class Distribution](./assets/class_distribution.png)
 
-## 3. Confidence Score Analysis
+## 4. Confidence Score Analysis
 
 The average confidence score across all detections is high, with most classes having an average confidence above 0.65. The highest average confidence is for the 'car' class (0.8024), while the lowest is for the 'motorcycle' class (0.6242).
 
@@ -53,13 +102,13 @@ The distribution of confidence scores shows that a significant portion of detect
 
 ![Confidence Score Distribution](./assets/score_distribution.png)
 
-## 4. Detection Density Distribution
+## 5. Detection Density Distribution
 
 The number of detections per image varies considerably across the dataset, reflecting the diversity of scenes from sparse rural areas to dense urban environments:
 
 ![Detections per Image](./assets/detections_per_image.png)
 
-## 5. Relationship to Class Imbalance
+## 6. Relationship to Class Imbalance
 
 The detection distribution closely mirrors the class imbalance typically observed in autonomous driving datasets:
 
@@ -71,7 +120,7 @@ The detection distribution closely mirrors the class imbalance typically observe
 
 4. **Rare Classes**: The 'train' class has zero detections across the entire validation set, indicating its extreme rarity in the dataset or potential difficulties in detection.
 
-## 6. Analysis of Confidence Patterns
+## 7. Analysis of Confidence Patterns
 
 Several interesting patterns emerge when analyzing confidence scores:
 
@@ -81,7 +130,7 @@ Several interesting patterns emerge when analyzing confidence scores:
 
 3. **Bimodal Distribution**: The overall confidence distribution shows a bimodal pattern, with peaks at very high confidence (0.9+) and at the lower threshold (0.3-0.4). This suggests the model is either very certain or relatively uncertain about its detections, with fewer predictions in the middle confidence ranges.
 
-## 7. Implications for Model Performance
+## 8. Implications for Model Performance
 
 Based on the quantitative analysis, we can draw several conclusions about the model's performance:
 
@@ -93,7 +142,7 @@ Based on the quantitative analysis, we can draw several conclusions about the mo
 
 4. **Scale Variations**: The variance in detection counts per image (from few to 56 detections) indicates the model can handle scenes of varying complexity and object density.
 
-## 8. Limitations of the Analysis
+## 9. Limitations of the Analysis
 
 It's important to acknowledge the limitations of this analysis:
 
@@ -103,7 +152,7 @@ It's important to acknowledge the limitations of this analysis:
 
 3. **Missing Spatial Analysis**: This analysis does not include spatial distribution of detections or size-based performance variations, which could provide additional insights.
 
-## 9. Summary and Next Steps
+## 10. Summary and Next Steps
 
 The Faster R-CNN R50-FPN 1x model shows strong detection performance on the BDD100K dataset, with particularly good results for common object classes. The model detected 170,662 objects across 10,000 validation images, with consistent detection counts across images.
 
