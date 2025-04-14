@@ -1,78 +1,118 @@
-# Quantitative Performance of Faster R-CNN R50-FPN on BDD100K
+# Quantitative Performance Analysis of Faster R-CNN R50-FPN on BDD100K
 
-This document provides a detailed analysis of the quantitative performance of the Faster R-CNN R50-FPN 1x model on the BDD100K dataset. The analysis is based on inference results from a sample of 100 validation images.
+This document provides a detailed quantitative analysis of the Faster R-CNN R50-FPN 1x model's performance on the complete BDD100K validation dataset (10,000 images). The analysis focuses on detection statistics, class distribution, and confidence score patterns.
 
 ## 1. Detection Performance Overview
 
 | Metric | Value |
 |--------|-------|
-| Number of Images Evaluated | 100 |
-| Total Detections (score ≥ 0.3) | 1,596 |
-| Average Detections per Image | 15.96 |
-| Median Detections per Image | 15.00 |
-| Maximum Detections per Image | 45 |
+| Number of Images Evaluated | 10,000 |
+| Total Detections (score ≥ 0.3) | 170,662 |
+| Average Detections per Image | 17.07 |
+| Median Detections per Image | 17.00 |
+| Maximum Detections per Image | 56 |
+
+The model detects a substantial number of objects per image (average 17.07), indicating the complexity and richness of the BDD100K street scenes. The consistency between mean and median suggests a relatively balanced distribution of object counts across images.
 
 ## 2. Class Distribution
 
-The model detected instances from 9 out of the 10 target classes in the BDD100K dataset. The distribution of detections across classes is as follows:
+The model detected instances from all 10 target classes in the BDD100K dataset except for 'train' (not found in the quantitative analysis results). The distribution of detections across classes is as follows:
 
 | Class | Count | Percentage | Average Confidence |
 |-------|-------|------------|-------------------|
-| car | 976 | 61.2% | 0.8029 |
-| traffic sign | 291 | 18.2% | 0.7026 |
-| pedestrian | 159 | 10.0% | 0.7237 |
-| traffic light | 100 | 6.3% | 0.7002 |
-| truck | 46 | 2.9% | 0.7053 |
-| bus | 18 | 1.1% | 0.7726 |
-| bicycle | 2 | 0.1% | 0.5207 |
-| motorcycle | 2 | 0.1% | 0.7418 |
-| rider | 2 | 0.1% | 0.6792 |
-| train | 0 | 0.0% | N/A |
+| car | 101,631 | 59.55% | 0.8024 |
+| traffic sign | 32,656 | 19.13% | 0.7126 |
+| pedestrian | 14,010 | 8.21% | 0.7093 |
+| traffic light | 13,475 | 7.90% | 0.6926 |
+| truck | 4,912 | 2.88% | 0.6375 |
+| bus | 2,075 | 1.22% | 0.6656 |
+| bicycle | 1,035 | 0.61% | 0.6451 |
+| rider | 510 | 0.30% | 0.6863 |
+| motorcycle | 358 | 0.21% | 0.6242 |
+| train | 0 | 0.00% | N/A |
 
-![Class Distribution](./inference_output/faster_rcnn_r50_fpn_1x_sample/analysis_visualizations/class_distribution.png)
+![Class Distribution](./assets/class_distribution.png)
 
 ## 3. Confidence Score Analysis
 
-The average confidence score across all detections is high, with most classes having an average confidence above 0.7. The highest average confidence is for the 'car' class (0.8029), while the lowest is for the 'bicycle' class (0.5207).
+The average confidence score across all detections is high, with most classes having an average confidence above 0.65. The highest average confidence is for the 'car' class (0.8024), while the lowest is for the 'motorcycle' class (0.6242).
 
-![Average Confidence by Class](./inference_output/faster_rcnn_r50_fpn_1x_sample/analysis_visualizations/avg_score_by_class.png)
+![Average Confidence by Class](./assets/avg_score_by_class.png)
 
-The distribution of confidence scores shows that most detections have high confidence (0.7 and above).
+The distribution of confidence scores shows that a significant portion of detections have very high confidence (0.9 and above), suggesting strong model certainty for many objects:
 
-![Confidence Score Distribution](./inference_output/faster_rcnn_r50_fpn_1x_sample/analysis_visualizations/score_distribution.png)
+| Confidence Score | Number of Detections |
+|------------------|----------------------|
+| 0.9 - 1.0 | 76,186 (44.6%) |
+| 0.8 - 0.9 | 17,322 (10.1%) |
+| 0.7 - 0.8 | 13,662 (8.0%) |
+| 0.6 - 0.7 | 12,963 (7.6%) |
+| 0.5 - 0.6 | 13,758 (8.1%) |
+| 0.4 - 0.5 | 15,933 (9.3%) |
+| 0.3 - 0.4 | 20,838 (12.2%) |
 
-## 4. Relationship to Class Imbalance
+![Confidence Score Distribution](./assets/score_distribution.png)
 
-The detection distribution largely reflects the class imbalance observed in the data analysis:
+## 4. Detection Density Distribution
 
-1. **Dominant Classes**: 'Car' is the most frequently detected class (61.2% of detections), aligning with its dominance in the training dataset.
-2. **Medium-Frequency Classes**: 'Traffic sign', 'pedestrian', and 'traffic light' form the next tier of detection frequency, matching their relative prominence in the dataset.
-3. **Low-Frequency Classes**: 'Bicycle', 'motorcycle', and 'rider' have very few detections, corresponding to their rarity in the dataset.
-4. **Missing Classes**: The 'train' class has no detections in the sample, likely due to its extreme rarity in the dataset.
+The number of detections per image varies considerably across the dataset, reflecting the diversity of scenes from sparse rural areas to dense urban environments:
 
-This pattern indicates that the model's detection capabilities are influenced by the class distribution in the training data.
+![Detections per Image](./assets/detections_per_image.png)
 
-## 5. Performance Metrics Limitations
+## 5. Relationship to Class Imbalance
 
-It's important to note some limitations of this analysis:
+The detection distribution closely mirrors the class imbalance typically observed in autonomous driving datasets:
 
-1. **No Precision/Recall Metrics**: Without a comparison to ground truth annotations, we cannot compute precision, recall, or mAP values. These metrics would provide a more comprehensive evaluation of detection performance.
+1. **Dominant Classes**: 'Car' is by far the most frequently detected class (59.55% of detections), which aligns with its prevalence in real-world driving scenarios.
 
-2. **Sample Size**: The analysis is based on a sample of 100 validation images, which may not fully represent the entire validation set.
+2. **Medium-Frequency Classes**: 'Traffic sign', 'pedestrian', and 'traffic light' form the next tier of detection frequency (combined 35.24%), representing critical elements for safe navigation.
 
-3. **Confidence Threshold**: All metrics are computed using a confidence threshold of 0.3. Different thresholds would yield different results.
+3. **Low-Frequency Classes**: 'Truck', 'bus', 'bicycle', 'rider', and 'motorcycle' have proportionally fewer detections (combined 5.22%), reflecting their relative rarity in diverse driving scenarios.
 
-4. **No Error Analysis**: Without ground truth, we cannot analyze false positives or false negatives to understand where the model fails.
+4. **Rare Classes**: The 'train' class has zero detections across the entire validation set, indicating its extreme rarity in the dataset or potential difficulties in detection.
 
-## 6. Confidence in the Results
+## 6. Analysis of Confidence Patterns
 
-The high average confidence scores across most classes suggest that the model is generally confident in its predictions. However, confidence scores alone do not guarantee accuracy. The low detection counts for rare classes (bicycle, motorcycle, rider) indicate that the model may struggle with these classes, likely due to limited training examples.
+Several interesting patterns emerge when analyzing confidence scores:
 
-## 7. Summary
+1. **Class Complexity Correlation**: There appears to be a correlation between object complexity and confidence scores. Simpler, larger objects like 'car' (0.8024) have higher average confidence than smaller or more varied objects like 'motorcycle' (0.6242).
 
-The Faster R-CNN R50-FPN 1x model demonstrates strong detection performance on common objects in the BDD100K dataset, particularly cars and traffic elements. The model's performance across classes appears to correlate with the class distribution in the training data, suggesting that class imbalance has a significant impact on detection capabilities.
+2. **Frequency-Confidence Relationship**: More frequently occurring classes tend to have higher confidence scores, suggesting the model has learned more robust representations for common objects.
 
-For a more comprehensive evaluation, future work should include:
-- Computing precision/recall curves and mAP metrics using ground truth annotations
-- Analyzing detection performance across different environmental conditions (weather, time of day, scene type)
-- Investigating failure cases to identify patterns and potential improvements 
+3. **Bimodal Distribution**: The overall confidence distribution shows a bimodal pattern, with peaks at very high confidence (0.9+) and at the lower threshold (0.3-0.4). This suggests the model is either very certain or relatively uncertain about its detections, with fewer predictions in the middle confidence ranges.
+
+## 7. Implications for Model Performance
+
+Based on the quantitative analysis, we can draw several conclusions about the model's performance:
+
+1. **Strong Performance on Common Objects**: The model demonstrates robust detection capabilities for common objects in driving scenes, particularly cars and traffic infrastructure elements.
+
+2. **Class Imbalance Effects**: The severe class imbalance in the dataset appears to impact detection performance, with rare classes having fewer detections and generally lower confidence scores.
+
+3. **Confidence Calibration**: The high percentage of very high confidence detections (44.6% with confidence ≥ 0.9) suggests the model may be well-calibrated for common objects but potentially overconfident in some predictions.
+
+4. **Scale Variations**: The variance in detection counts per image (from few to 56 detections) indicates the model can handle scenes of varying complexity and object density.
+
+## 8. Limitations of the Analysis
+
+It's important to acknowledge the limitations of this analysis:
+
+1. **No Ground Truth Comparison**: Without comparison to ground truth annotations, we cannot compute precision, recall, mAP, or analyze false positives/negatives. This limits our ability to fully evaluate detection accuracy.
+
+2. **Confidence Threshold Dependency**: All metrics are computed using a confidence threshold of 0.3. Different thresholds would yield different results and potentially different interpretations.
+
+3. **Missing Spatial Analysis**: This analysis does not include spatial distribution of detections or size-based performance variations, which could provide additional insights.
+
+## 9. Summary and Next Steps
+
+The Faster R-CNN R50-FPN 1x model shows strong detection performance on the BDD100K dataset, with particularly good results for common object classes. The model detected 170,662 objects across 10,000 validation images, with consistent detection counts across images.
+
+For a more comprehensive evaluation, the following additional analyses would be valuable:
+
+1. **Per-category Precision/Recall Analysis**: Compute precision, recall, and AP for each class using the ground truth annotations.
+
+2. **Error Analysis**: Analyze false positives and false negatives to identify common failure modes.
+
+3. **Environmental Condition Analysis**: Evaluate performance across different environmental conditions (weather, time of day, scene type) to identify potential biases.
+
+4. **Object Size Analysis**: Examine detection performance by object size to understand the model's limitations for small, medium, and large objects. 

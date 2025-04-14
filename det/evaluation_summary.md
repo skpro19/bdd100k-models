@@ -4,7 +4,7 @@ This document summarizes the evaluation of the Faster R-CNN R50-FPN 1x model on 
 
 ## 1. Evaluation Overview
 
-The evaluation was performed on a sample of 100 images from the BDD100K validation set. The evaluation approach combined:
+The evaluation was performed on the complete BDD100K validation set (10,000 images). The evaluation approach combined:
 
 1. **Quantitative Analysis**: Statistical analysis of detection counts, class distribution, and confidence scores.
 2. **Qualitative Analysis**: Visual inspection of detection visualizations to identify patterns and failure cases.
@@ -14,32 +14,33 @@ The evaluation was performed on a sample of 100 images from the BDD100K validati
 
 ### 2.1 Model Performance
 
-- The model detected a total of **1,596 objects** across 100 images (with score ≥ 0.3).
-- Average of **15.96 detections per image**.
-- Detected instances from **9 out of 10 target classes** (missing the 'train' class).
-- High average confidence scores for most classes (**>0.7**).
+- The model detected a total of **170,662 objects** across 10,000 images (with score ≥ 0.3).
+- Average of **17.07 detections per image**.
+- Detected instances from **9 out of 10 target classes** (no detections for the 'train' class).
+- High average confidence scores for most classes (**>0.65**).
+- A significant portion of detections (44.6%) have very high confidence (≥0.9).
 
 ### 2.2 Class-wise Performance
 
 | Class | Detection % | Avg. Confidence | Observations |
 |-------|-------------|-----------------|--------------|
-| car | 61.2% | 0.8029 | Excellent detection, especially for clearly visible cars |
-| traffic sign | 18.2% | 0.7026 | Good detection, even at moderate distances |
-| pedestrian | 10.0% | 0.7237 | Good for visible pedestrians, struggles with occlusion |
-| traffic light | 6.3% | 0.7002 | Reliable detection in good lighting conditions |
-| truck | 2.9% | 0.7053 | Occasional confusion with buses |
-| bus | 1.1% | 0.7726 | High confidence when detected |
-| bicycle | 0.1% | 0.5207 | Rarely detected, low confidence |
-| motorcycle | 0.1% | 0.7418 | Rarely detected |
-| rider | 0.1% | 0.6792 | Rarely detected |
-| train | 0.0% | N/A | Not detected in the sample |
+| car | 59.55% | 0.8024 | Excellent detection, especially for clearly visible cars |
+| traffic sign | 19.13% | 0.7126 | Good detection, even at moderate distances |
+| pedestrian | 8.21% | 0.7093 | Good for visible pedestrians, struggles with occlusion |
+| traffic light | 7.90% | 0.6926 | Reliable detection in good lighting conditions |
+| truck | 2.88% | 0.6375 | Occasional confusion with buses |
+| bus | 1.22% | 0.6656 | Good detection when present |
+| bicycle | 0.61% | 0.6451 | Limited detection, moderate confidence |
+| rider | 0.30% | 0.6863 | Rarely detected, moderate confidence |
+| motorcycle | 0.21% | 0.6242 | Rarely detected, lowest average confidence |
+| train | 0.00% | N/A | Not detected in the validation set |
 
 ### 2.3 Common Failure Patterns
 
 1. **Occlusion**: Heavily occluded objects are frequently missed.
 2. **Small Objects**: Distant or small instances are often missed.
 3. **Challenging Conditions**: Performance degrades in nighttime, rainy, or snowy conditions.
-4. **Rare Classes**: Very few detections for uncommon classes (bicycles, motorcycles, riders, trains).
+4. **Rare Classes**: Very few detections for uncommon classes (bicycles, motorcycles, riders) and no detections for trains.
 5. **False Positives**: Reflections, shadows, and similar-looking objects sometimes cause false positives.
 
 ## 3. Connection to Data Analysis Findings
@@ -49,7 +50,7 @@ The evaluation results strongly correlate with the data analysis findings:
 ### 3.1 Class Imbalance
 
 - **Data Finding**: The 'car' class dominates the dataset (>55% of instances), while classes like 'train', 'motor', 'rider', and 'bike' are rare (<1%).
-- **Impact on Model**: Detection distribution closely mirrors the training data distribution. Cars are detected most frequently (61.2%), while rare classes have very few or no detections.
+- **Impact on Model**: Detection distribution closely mirrors the training data distribution. Cars are detected most frequently (59.55%), while rare classes have very few detections (motorcycles: 0.21%, riders: 0.30%, bicycles: 0.61%) or none at all (trains: 0%).
 
 ### 3.2 Object Attributes
 
@@ -70,16 +71,18 @@ The evaluation results strongly correlate with the data analysis findings:
 
 ### 4.1 Strengths
 
-1. **Strong Detection of Common Classes**: Excellent performance on cars, traffic signs, and pedestrians.
-2. **High Confidence Predictions**: Generally high confidence in its predictions across most classes.
+1. **Strong Detection of Common Classes**: Excellent performance on cars, traffic signs, pedestrians, and traffic lights.
+2. **High Confidence Predictions**: Generally high confidence in its predictions for common classes (44.6% of detections have confidence ≥0.9).
 3. **Adaptability to Common Conditions**: Good performance in the most common environmental conditions.
+4. **Scale Handling**: The model effectively handles scenes with varying object density (from sparse to 56 objects per image).
 
 ### 4.2 Weaknesses
 
-1. **Class Imbalance Effects**: Poor performance on rare classes.
+1. **Class Imbalance Effects**: Poor performance on rare classes, with extremely limited detection of motorcycles, riders, and bicycles, and no detection of trains.
 2. **Occlusion Handling**: Struggles with heavily occluded objects.
 3. **Environmental Robustness**: Reduced performance in challenging lighting and weather conditions.
 4. **Small Object Detection**: Difficulty detecting small or distant objects.
+5. **Bimodal Confidence**: The confidence distribution shows a bimodal pattern, suggesting the model is either very certain or quite uncertain about its predictions.
 
 ## 5. Suggestions for Improvement
 
@@ -90,27 +93,35 @@ Based on the evaluation findings, several approaches could improve the model's p
 1. **Class-weighted Loss Functions**: Apply higher weights to rare classes during training.
 2. **Data Augmentation for Rare Classes**: Increase the effective number of training samples for rare classes through augmentation.
 3. **Two-stage Training**: First train on a balanced subset, then fine-tune on the full dataset.
+4. **Focal Loss**: Implement focal loss to address the class imbalance by focusing more on hard examples.
 
 ### 5.2 Improving Occlusion Handling
 
 1. **Occlusion-aware Models**: Implement architectural modifications specifically designed to handle occlusion.
 2. **Attention Mechanisms**: Incorporate attention mechanisms to focus on partially visible objects.
 3. **Context Modeling**: Use context information to infer the presence of occluded objects.
+4. **Part-based Detectors**: Implement detectors that can identify objects based on visible parts rather than requiring the whole object.
 
 ### 5.3 Enhancing Environmental Robustness
 
 1. **Domain Adaptation**: Apply domain adaptation techniques to improve performance across different conditions.
 2. **Condition-specific Fine-tuning**: Train separate models or branches for different conditions (day/night, clear/adverse weather).
 3. **Image Enhancement**: Apply pre-processing techniques to enhance images in challenging conditions.
+4. **Data Augmentation for Conditions**: Augment training data with synthetic variations of lighting and weather conditions.
 
 ### 5.4 Improving Small Object Detection
 
 1. **Multi-scale Training and Testing**: Incorporate multi-scale techniques to better handle objects of different sizes.
 2. **Feature Pyramid Enhancements**: Improve the Feature Pyramid Network (FPN) to better represent small objects.
 3. **Dedicated Small Object Detector**: Implement a specialized detector for small objects that works alongside the main detector.
+4. **Context-aware Detection**: Incorporate contextual information to improve small object detection.
 
 ## 6. Conclusion
 
-The Faster R-CNN R50-FPN 1x model demonstrates good overall performance on the BDD100K dataset, particularly for common classes in favorable conditions. However, its performance is significantly affected by class imbalance, occlusion, and challenging environmental conditions. The strong correlation between the model's performance characteristics and the data distribution highlights the importance of addressing dataset biases during training.
+The Faster R-CNN R50-FPN 1x model demonstrates good overall performance on the BDD100K dataset, particularly for common classes in favorable conditions. The model detected 170,662 objects across 10,000 validation images, with an average of 17.07 detections per image.
+
+However, its performance is significantly affected by class imbalance, occlusion, and challenging environmental conditions. The strong correlation between the model's performance characteristics and the data distribution highlights the importance of addressing dataset biases during training.
+
+The confidence analysis reveals a bimodal pattern, with the model being either very confident (≥0.9) or relatively uncertain (0.3-0.4) about its predictions. This suggests potential limitations in the model's calibration for certain object types or scenarios.
 
 By implementing the suggested improvements, particularly those targeting class imbalance and occlusion handling, the model's performance could be substantially enhanced, especially for the currently challenging cases. 
