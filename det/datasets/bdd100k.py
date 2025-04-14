@@ -4,6 +4,7 @@ import os
 import os.path as osp
 from typing import List
 import json
+import time # Import time module
 
 import numpy as np
 from mmengine.registry import DATASETS
@@ -30,37 +31,83 @@ class BDD100KDetDataset(CocoDataset):  # type: ignore
         "traffic sign",
     ]
 
+    def __init__(self, *args, **kwargs):
+        # Pop the custom argument before passing to parent
+        self.subset_size = kwargs.pop('subset_size', None)
+        print(f"[BDD100KDetDataset __init__] Found subset_size: {self.subset_size}")
+        super().__init__(*args, **kwargs)
+
     def load_data_list(self) -> List[dict]:
         """Load annotations from BDD100K format."""
+        print(f"[BDD100KDetDataset] Loading annotations from: {self.ann_file}") # Log start
+        start_time = time.time()
         assert osp.exists(self.ann_file), f'Annotation file not found: {self.ann_file}'
 
         with open(self.ann_file, 'r') as f:
-            bdd_data = json.load(f) # Load the list of frames
+            try:
+                bdd_data = json.load(f)
+                json_load_time = time.time()
+                print(f"[BDD100KDetDataset] JSON loading took {json_load_time - start_time:.2f} seconds.")
+            except json.JSONDecodeError as e:
+                print(f"ERROR: Failed to decode JSON from {self.ann_file}: {e}")
+                raise
 
         data_list = []
-        # Create category mapping
         cat2label = {cat: i for i, cat in enumerate(self.CLASSES)}
+        self.cat_ids = list(range(len(self.CLASSES)))
+        self.img_ids = []
+        self.cat_img_map = {cat_id: [] for cat_id in self.cat_ids}
+        # img_id_counter = 0 # Use actual index if loading subset
 
-        for i, frame in enumerate(bdd_data):
-            img_path = osp.join(self.data_prefix.get('img_path'), frame['name'])
-            file_name = osp.basename(img_path) # Extract base filename
+        # Determine the list of frames to process
+        # frames_to_process = bdd_data # Always process the full data
+        # Check if a subset size is specified in the config
+        subset_size = getattr(self, 'subset_size', None)
+        if subset_size is not None and isinstance(subset_size, int) and subset_size > 0:
+            print(f"[BDD100KDetDataset] Taking the first {subset_size} frames as specified by config.")
+            frames_to_process = bdd_data[:subset_size]
+            if len(frames_to_process) < subset_size:
+                 print(f"Warning: Requested subset_size={subset_size}, but only {len(frames_to_process)} frames available in JSON.")
+        else:
+            frames_to_process = bdd_data # Process the full data if subset_size not specified
+            
+        print(f"[BDD100KDetDataset] Processing {len(frames_to_process)} frames...")
+        process_start_time = time.time()
+
+        # Use the actual index from the original file as the img_id for consistency
+        # when loading a subset.
+        for img_id, frame in enumerate(frames_to_process): # Use enumerate index as img_id
+            self.img_ids.append(img_id) 
+            # img_id_counter += 1 # Not needed if using original index
+            
+            img_path = osp.join(self.data_prefix.get('img_path', ''), frame['name']) # Add default ''
+            if not self.data_prefix.get('img_path'):
+                 print(f"Warning: data_prefix['img_path'] is missing or None.")
+            
+            file_name = osp.basename(img_path)
+            height = -1
+            width = -1
+            
             data_info = {
-                'img_id': i, # Use index as image ID
+                # 'img_id': i, # Use the unique integer ID
+                'img_id': img_id,
                 'img_path': img_path,
-                'file_name': file_name, # Add file_name key
-                # Height/width might be needed later, mmdet often handles this in pipeline
-                # 'height': ?,
-                # 'width': ?,
+                'file_name': file_name,
+                'height': height, 
+                'width': width,
                 'instances': []
             }
 
+            image_has_relevant_annotation = False # Track if image has annotations for cat_img_map
             if 'labels' in frame:
                 for ann in frame['labels']:
-                    # Check if category is relevant for detection
                     if ann['category'] in cat2label:
-                        # Get label index
                         label = cat2label[ann['category']]
-                        # Get bounding box [x1, y1, x2, y2]
+                        # Add image to cat_img_map for this category
+                        if img_id not in self.cat_img_map[label]:
+                            self.cat_img_map[label].append(img_id)
+                        image_has_relevant_annotation = True
+                            
                         if 'box2d' in ann:
                             bbox = [
                                 ann['box2d']['x1'],
@@ -78,6 +125,17 @@ class BDD100KDetDataset(CocoDataset):  # type: ignore
                             data_info['instances'].append(instance)
 
             data_list.append(data_info)
+            
+            if (img_id + 1) % 10000 == 0: # Log progress every 10k frames
+                print(f"  Processed {img_id + 1} / {len(frames_to_process)} frames...")
+
+        process_end_time = time.time()
+        print(f"[BDD100KDetDataset] Frame processing took {process_end_time - process_start_time:.2f} seconds.")
+
+        # Set self.cat_ids based on the CLASSES definition
+        self.cat_ids = list(range(len(self.CLASSES)))
+        print(f"[BDD100KDetDataset] Set self.cat_ids: {self.cat_ids}") # Debug print
+        print(f"[BDD100KDetDataset] Built cat_img_map (sample): {{ {next(iter(self.cat_img_map.items()))[0]}: {next(iter(self.cat_img_map.items()))[1][:5]}... }}") # Debug print
 
         return data_list
 
