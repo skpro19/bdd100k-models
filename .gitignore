@@ -5,7 +5,7 @@ __pycache__/
 
 # folder
 **/inference_output/**
-
+**/evaluation_output/**
 # C extensions
 *.so
 
