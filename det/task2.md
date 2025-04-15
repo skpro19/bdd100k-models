@@ -9,7 +9,7 @@ This document details the model selection, justification, and architecture for T
 *   **Training Schedule:** 1x (Standard training schedule as defined in the BDD100K model zoo)
 *   **Source:** BDD100K Model Zoo (`bdd100k-models/det/`)
 
-This specific configuration (`faster_rcnn_r50_fpn_1x_det_bdd100k`) was confirmed via the [`run_inference.sh`](./run_inference.sh) script.
+This specific configuration (`faster_rcnn_r50_fpn_1x_det_bdd100k`) was confirmed via the [`run_inference.sh`](./bdd100k-models/det/run_inference.sh) script.
 
 ## 2. Justification for Model Choice
 
@@ -36,8 +36,8 @@ In essence, the RPN tells the Fast R-CNN component *where* to look, and the Fast
 
 ## 4. Code Snippets / Working Notebooks
 
-*   The configuration file used for this model is located at [`bdd100k-models/det/configs/det/faster_rcnn_r50_fpn_1x_det_bdd100k.py`](./configs/det/faster_rcnn_r50_fpn_1x_det_bdd100k.py).
-*   The inference script used is [`bdd100k-models/det/run_inference.sh`](./run_inference.sh).
+*   The configuration file used for this model is located at [`bdd100k-models/det/configs/det/faster_rcnn_r50_fpn_1x_det_bdd100k.py`](./bdd100k-models/det/configs/det/faster_rcnn_r50_fpn_1x_det_bdd100k.py).
+*   The inference script used is [`bdd100k-models/det/run_inference.sh`](./bdd100k-models/det/run_inference.sh).
 *   The core implementation relies on the `mmdetection` library, which is built upon PyTorch. Specific code for the Faster R-CNN architecture resides within the `mmdetection` source code.
 
 ## 5. (Bonus) Data Loader and Training Pipeline
@@ -46,9 +46,9 @@ In essence, the RPN tells the Fast R-CNN component *where* to look, and the Fast
 
 ### 5.1 Data Loading
 
-The data loading process utilizes the MMDetection framework and a custom dataset class `BDD100KDetDataset` (defined in [`datasets/bdd100k.py`](../../datasets/bdd100k.py), though not shown here for brevity) which is designed to handle the BDD100K annotation format.
+The data loading process utilizes the MMDetection framework and a custom dataset class `BDD100KDetDataset` (defined in [`datasets/bdd100k.py`](./datasets/bdd100k.py), though not shown here for brevity) which is designed to handle the BDD100K annotation format.
 
-The core configuration for the training data loader is defined within the MMDetection configuration file ([`configs/det/minimal_faster_rcnn.py`](./configs/det/minimal_faster_rcnn.py)):
+The core configuration for the training data loader is defined within the MMDetection configuration file ([`configs/det/minimal_faster_rcnn.py`](./bdd100k-models/det/configs/det/minimal_faster_rcnn.py)):
 
 ```python
 # From: bdd100k-models/det/configs/det/minimal_faster_rcnn.py
@@ -90,14 +90,14 @@ Key aspects:
 *   **`data_root`**, **`ann_file`**, **`data_prefix`**: Define the paths to the BDD100K images and annotations.
 *   **`train_pipeline`**: A list of data augmentation and preprocessing steps applied to each image and its annotations (loading, resizing, random flipping, packing into the format expected by the model).
 *   **`batch_size`**, **`num_workers`**: Standard PyTorch DataLoader parameters for batching and parallel data loading.
-*   **Subset Loading**: The training script ([`train.py`](./train.py)) modifies this configuration at runtime to load only a subset (the first 200 samples) for the bonus task demonstration. It achieves this by adding a `subset_size=200` parameter to the `dataset` dictionary, which is then handled by the custom `BDD100KDetDataset`.
+*   **Subset Loading**: The training script ([`train.py`](./bdd100k-models/det/train.py)) modifies this configuration at runtime to load only a subset (the first 200 samples) for the bonus task demonstration. It achieves this by adding a `subset_size=200` parameter to the `dataset` dictionary, which is then handled by the custom `BDD100KDetDataset`.
 
 ### 5.2 Training Pipeline
 
-The training process is orchestrated by the [`train.py`](./train.py) script, which leverages MMDetection's `Runner` class. This script takes a configuration file as input and handles the setup, training loop, logging, and checkpointing.
+The training process is orchestrated by the [`train.py`](./bdd100k-models/det/train.py) script, which leverages MMDetection's `Runner` class. This script takes a configuration file as input and handles the setup, training loop, logging, and checkpointing.
 
 **Configuration File (`minimal_faster_rcnn.py`):**
-This file ([`configs/det/minimal_faster_rcnn.py`](./configs/det/minimal_faster_rcnn.py)) defines the complete model architecture (Faster R-CNN with R-50-FPN), dataset configurations (as shown above), optimizer (SGD), learning rate schedule (Linear warmup + MultiStep decay), and runtime settings (hooks for logging, checkpointing, etc.).
+This file ([`configs/det/minimal_faster_rcnn.py`](./bdd100k-models/det/configs/det/minimal_faster_rcnn.py)) defines the complete model architecture (Faster R-CNN with R-50-FPN), dataset configurations (as shown above), optimizer (SGD), learning rate schedule (Linear warmup + MultiStep decay), and runtime settings (hooks for logging, checkpointing, etc.).
 
 ```python
 # Relevant sections from: bdd100k-models/det/configs/det/minimal_faster_rcnn.py
@@ -145,11 +145,11 @@ log_processor = dict(...)
 ```
 
 **Training Script (`train.py`):**
-This script ([`train.py`](./train.py)) performs several key actions for the bonus task:
+This script ([`train.py`](./bdd100k-models/det/train.py)) performs several key actions for the bonus task:
 1.  Parses command-line arguments (config file path, work directory, number of epochs).
-2.  Loads the specified configuration file ([`minimal_faster_rcnn.py`](./configs/det/minimal_faster_rcnn.py)).
+2.  Loads the specified configuration file ([`minimal_faster_rcnn.py`](./bdd100k-models/det/configs/det/minimal_faster_rcnn.py)).
 3.  **Modifies the configuration:**
-    *   Sets `max_epochs` to the value provided via the command line (defaults to 1 in [`run_train_subset.sh`](./run_train_subset.sh)).
+    *   Sets `max_epochs` to the value provided via the command line (defaults to 1 in [`run_train_subset.sh`](./bdd100k-models/det/run_train_subset.sh)).
     *   Adds `subset_size=200` to the `train_dataloader.dataset` configuration to limit the training data.
     *   Disables validation (`val_dataloader`, `val_evaluator`, `val_cfg` set to `None`) as we are only training on a small subset for demonstration.
 4.  Initializes MMDetection's `Runner` with the modified configuration.
@@ -193,7 +193,7 @@ def main() -> None:
 ```
 
 **Execution Script (`run_train_subset.sh`):**
-A simple bash script ([`run_train_subset.sh`](./run_train_subset.sh)) is used to launch [`train.py`](./train.py) with the correct arguments:
+A simple bash script ([`run_train_subset.sh`](./bdd100k-models/det/run_train_subset.sh)) is used to launch [`train.py`](./bdd100k-models/det/train.py) with the correct arguments:
 
 ```bash
 #!/bin/bash
@@ -219,7 +219,7 @@ exit $exit_code
 
 ### 5.3 Training Run (1 Epoch on Subset)
 
-The [`run_train_subset.sh`](./run_train_subset.sh) script was executed, triggering the training process defined in [`train.py`](./train.py) using the [`minimal_faster_rcnn.py`](./configs/det/minimal_faster_rcnn.py) configuration, modified for 1 epoch and 200 training samples. The following logs were captured from the terminal output:
+The [`run_train_subset.sh`](./bdd100k-models/det/run_train_subset.sh) script was executed, triggering the training process defined in [`train.py`](./bdd100k-models/det/train.py) using the [`minimal_faster_rcnn.py`](./bdd100k-models/det/configs/det/minimal_faster_rcnn.py) configuration, modified for 1 epoch and 200 training samples. The following logs were captured from the terminal output:
 
 ```text
 # Terminal Output from: bash ./run_train_subset.sh
@@ -316,4 +316,4 @@ The logs show:
 *   Loss values (overall `loss`, RPN classification `loss_rpn_cls`, RPN bounding box regression `loss_rpn_bbox`, final classification `loss_cls`, and final bounding box regression `loss_bbox`) decreasing during the epoch.
 *   Learning rate (`lr`) changes according to the schedule.
 *   Estimated time remaining (`eta`), time per iteration (`time`), data loading time (`data_time`), and memory usage.
-*   Successful completion of 1 epoch and saving of the checkpoint to [`./work_dirs/minimal_faster_rcnn_subset_1epoch/epoch_1.pth`](./work_dirs/minimal_faster_rcnn_subset_1epoch/epoch_1.pth). 
+*   Successful completion of 1 epoch and saving of the checkpoint to [`./work_dirs/minimal_faster_rcnn_subset_1epoch/epoch_1.pth`](./bdd100k-models/det/work_dirs/minimal_faster_rcnn_subset_1epoch/epoch_1.pth). 
